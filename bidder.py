@@ -184,9 +184,24 @@ RULES FOR bid_text:
     return gemini_json(prompt)
 
 
+def notify_whatsapp(p, amount, days, score):
+    """WhatsApp message through the free CallMeBot service. Phone and key come from GitHub Secrets (never in the code)."""
+    phone, key = os.environ.get("WHATSAPP_PHONE"), os.environ.get("CALLMEBOT_APIKEY")
+    if not phone or not key:
+        return
+    text = f"BidSmith placed a bid\n{p['title'][:90]}\n{amount} {p['currency']} in {days} days | fit {score}/100 | {p['bids']} bids on it\n{p['url']}"
+    try:
+        r = requests.get("https://api.callmebot.com/whatsapp.php", timeout=30,
+                         params={"phone": re.sub(r"\D", "", phone), "text": text, "apikey": key})
+        log("   WhatsApp message sent" if r.status_code == 200 else f"   (WhatsApp not sent: HTTP {r.status_code})")
+    except requests.RequestException as e:  # never print the exception text: it contains the URL with your key
+        log(f"   (WhatsApp not sent: {type(e).__name__})")
+
+
 def notify_bid(p, amount, days, score, bids_today):
-    """Email you through GitHub: opens a short issue (which GitHub emails to the repo owner), then closes it.
-    The bid text is NOT included, because this repository is public."""
+    """Tell you about the bid: a WhatsApp message (if set up) and an email through GitHub (opens a short issue,
+    which GitHub emails to the repo owner, then closes it). The bid text is NOT included: the repository is public."""
+    notify_whatsapp(p, amount, days, score)
     token, repo, owner = os.environ.get("GITHUB_TOKEN"), os.environ.get("GITHUB_REPOSITORY"), os.environ.get("GITHUB_REPOSITORY_OWNER")
     if not token or not repo:
         return

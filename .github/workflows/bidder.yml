@@ -39,6 +39,8 @@ jobs:
           FREELANCER_TOKEN: ${{ secrets.FREELANCER_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
+          CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
 
       - uses: actions/cache/save@v4
         if: always()
