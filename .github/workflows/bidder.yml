@@ -1,0 +1,45 @@
+name: BidSmith
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 minutes (GitHub may start it a few minutes late)
+  workflow_dispatch:         # lets you press "Run workflow" by hand
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bidsmith
+  cancel-in-progress: false
+
+jobs:
+  bid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      # remembers which projects were already looked at between runs
+      - uses: actions/cache/restore@v4
+        with:
+          path: state
+          key: state-none
+          restore-keys: state-
+
+      - name: Check Freelancer and bid
+        run: python bidder.py
+        env:
+          FREELANCER_TOKEN: ${{ secrets.FREELANCER_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: state
+          key: state-${{ github.run_id }}

@@ -1,0 +1,40 @@
+{
+  "skill_ids": [
+    9,
+    77,
+    323,
+    335,
+    500,
+    602,
+    613,
+    759,
+    1031,
+    1042
+  ],
+  "project_types": [
+    "fixed",
+    "hourly"
+  ],
+  "min_budget_usd": 10,
+  "max_budget_usd": 1500,
+  "exclude_words": [
+    "academic",
+    "essay",
+    "assignment",
+    "exam",
+    "thesis",
+    "homework",
+    "telegram",
+    "whatsapp me",
+    "test project",
+    "free trial"
+  ],
+  "milestone_percentage": 50,
+  "your_name": "Sampresh",
+  "tone": "Confident & direct",
+  "profile": "Sampresh, full-stack JavaScript developer based in India (Ghaziabad), 4+ years of web development experience. Skills: JavaScript, React.js, Node.js, HTML5, CSS3, Bootstrap, web development, software development. Hourly rate: $20/hour.\n\nProjects built:\n- Employee and customer activity tracking system for a company: salary expenditure tracking, task management and policy management modules.\n- Currently building a website and mobile app with customer support management: a question-and-answer platform for programmers where users post programming questions and connect directly with developers for project work.\n\nPortfolio: both projects are shown as portfolio items on the Freelancer.com profile (the bid can say 'you can see both in my portfolio').\n\nFreelancer.com status: newer account with no reviews yet. Offer milestone-based payment so the client pays only when satisfied, quick replies, and a small first milestone to prove quality. Never claim reviews, ratings or completed Freelancer.com jobs.",
+  "max_existing_bids": 40,
+  "max_project_age_minutes": 20,
+  "min_fit_score": 75,
+  "max_bids_per_day": 10
+}
