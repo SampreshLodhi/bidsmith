@@ -119,21 +119,28 @@ MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"]
 
 def gemini_json(prompt):
     key = os.environ["GEMINI_API_KEY"]
-    models = [os.environ["GEMINI_MODEL"]] if os.environ.get("GEMINI_MODEL") else MODELS
+    first = os.environ.get("GEMINI_MODEL")
+    models = ([first] if first else []) + [m for m in MODELS if m != first]
     last = ""
     for m in models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent"
         body = {"contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {"responseMimeType": "application/json", "temperature": 0.6}}
-        for attempt in range(3):
-            r = requests.post(url, params={"key": key}, json=body, timeout=90)
-            if r.status_code == 429:
-                time.sleep(12 * (attempt + 1))
-                last = "rate limited"
+        r = None
+        for attempt in range(2):
+            try:
+                r = requests.post(url, params={"key": key}, json=body, timeout=50)
+            except requests.RequestException as e:  # slow or unreachable: treat like a busy server
+                last = f"{m}: {type(e).__name__}"
+                r = None
+                continue
+            if r.status_code in (429, 500, 503):  # busy or rate limited: wait a little, retry, then try the next model
+                last = f"{m}: HTTP {r.status_code}"
+                time.sleep(6 * (attempt + 1))
                 continue
             break
-        if r.status_code == 404:
-            last = f"model {m} not found"
+        if r is None or r.status_code in (404, 429, 500, 503):
+            last = last or f"model {m} not found"
             continue
         if r.status_code != 200:
             raise RuntimeError(f"Gemini HTTP {r.status_code}: {r.text[:200]}")
