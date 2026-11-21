@@ -79,6 +79,7 @@ class FL:
                 "bids": stats.get("bid_count") or 0, "avg": stats.get("bid_avg") or 0,
                 "submitted": p.get("time_submitted") or int(time.time()),
                 "skills": ", ".join(j.get("name", "") for j in (p.get("jobs") or [])),
+                "url": f"https://www.freelancer.com/projects/{p.get('seo_url') or p['id']}",
             })
         return out
 
@@ -183,6 +184,31 @@ RULES FOR bid_text:
     return gemini_json(prompt)
 
 
+def notify_bid(p, amount, days, score, bids_today):
+    """Email you through GitHub: opens a short issue (which GitHub emails to the repo owner), then closes it.
+    The bid text is NOT included, because this repository is public."""
+    token, repo, owner = os.environ.get("GITHUB_TOKEN"), os.environ.get("GITHUB_REPOSITORY"), os.environ.get("GITHUB_REPOSITORY_OWNER")
+    if not token or not repo:
+        return
+    body = (f"@{owner} BidSmith placed a bid.\n\n"
+            f"- Project: [{p['title']}]({p['url']})\n"
+            f"- Your bid: {amount} {p['currency']} in {days} days\n"
+            f"- Fit score: {score}/100\n"
+            f"- Bids already on the project: {p['bids']}\n"
+            f"- Bids placed today: {bids_today}\n\n"
+            "Open the project link to read your bid.")
+    h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+    try:
+        r = requests.post(f"https://api.github.com/repos/{repo}/issues", headers=h, timeout=30,
+                          json={"title": f"Bid placed: {p['title'][:80]}", "body": body, "assignees": [owner] if owner else []})
+        if r.status_code == 201:
+            requests.patch(r.json()["url"], headers=h, json={"state": "closed"}, timeout=30)
+        else:
+            log(f"   (email note not sent: HTTP {r.status_code})")
+    except requests.RequestException as e:
+        log(f"   (email note not sent: {type(e).__name__})")
+
+
 def shorten(text):
     cut = text[: MAX_CHARS - 20]
     end = max(cut.rfind(". "), cut.rfind("\n"))
@@ -276,6 +302,7 @@ def main():
             posted += 1
             seen[str(p["id"])]["r"] = "BID PLACED"
             log(f"   BID PLACED: {amount} {p['currency']}, {days} days")
+            notify_bid(p, amount, days, score, bids_today + posted)
         except Exception as e:
             msg = str(e)
             log(f"   bid refused: {msg[:140]}")
